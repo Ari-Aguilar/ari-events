@@ -1,0 +1,232 @@
+//Coded by Ari Love - Gamebanana
+import funkin.play.PlayState;
+import funkin.play.event.SongEvent;
+import funkin.play.character.BaseCharacter;
+import flixel.tweens.FlxTween;
+import flixel.tweens.FlxEase;
+import funkin.Conductor;
+import funkin.modding.module.ScriptedModule;
+
+class AriColorCharacterFixes extends ScriptedModule {
+  var shouldFixColorEvent:Bool = true;
+
+  public function new(){
+    super('ari-color-character-fixes');
+  }
+
+  override function onSongRetry(event):Void {
+    super.onSongRetry(event);
+    resetCharacterColors();
+  }
+
+  override function onCountdownStart(event):Void {
+    super.onCountdownStart(event);
+    resetCharacterColors();
+  }
+
+  function resetCharacterColors():Void {
+    if (PlayState.instance == null || PlayState.instance.currentStage == null) return;
+    
+    var characters = [
+      PlayState.instance.currentStage.getBoyfriend(),
+      PlayState.instance.currentStage.getGirlfriend(),
+      PlayState.instance.currentStage.getDad()
+    ];
+
+    for (character in characters) {
+      if (character == null) continue;
+      
+      // Cancelar tweens activos
+      FlxTween.cancelTweensOf(character.colorTransform);
+      
+      // Resetear a color original
+      if (character.colorTransform != null) {
+        character.colorTransform.redMultiplier = 1;
+        character.colorTransform.greenMultiplier = 1;
+        character.colorTransform.blueMultiplier = 1;
+        character.colorTransform.redOffset = 0;
+        character.colorTransform.greenOffset = 0;
+        character.colorTransform.blueOffset = 0;
+      }
+    }
+  }
+}
+
+class AriSolidCharacter extends SongEvent {
+
+    var eventName:String = "Ari Events | Color Character";
+
+    public override function handleEvent(data) {
+        if (PlayState.instance == null || PlayState.instance.currentStage == null) return;
+        if (PlayState.instance.isMinimalMode) return;
+
+        var character:BaseCharacter = null;
+
+        switch(data.value.character) {
+            case 'bf': character = PlayState.instance.currentStage.getBoyfriend();
+            case 'gf': character = PlayState.instance.currentStage.getGirlfriend();
+            case 'dad': character = PlayState.instance.currentStage.getDad();
+        }
+
+        if (character != null) {
+
+            var rMul:Float = 0;
+            var gMul:Float = 0;
+            var bMul:Float = 0;
+
+            var rOff:Int = 255;
+            var gOff:Int = 255;
+            var bOff:Int = 255;
+
+            switch (data.value.color) {
+
+                // ========== Original Color ==========
+                case "Original":
+                    rMul = gMul = bMul = 1;
+                    rOff = gOff = bOff = 0;
+
+                // ========== TUS COLORES CUSTOM ==========
+                case "PinkCustom":  // EC579B
+                    rOff = 236; gOff = 87; bOff = 155;
+
+                case "VioletCustom": // CA50FD
+                    rOff = 202; gOff = 80; bOff = 253;
+
+                // ========== 36 COLORES POR DEFECTO ==========
+                case "Black":  rOff = gOff = bOff = 0;
+                case "White":  rOff = gOff = bOff = 255;
+                case "Red":    rOff = 255; gOff = 0;   bOff = 0;
+                case "Green":  rOff = 0;   gOff = 255; bOff = 0;
+                case "Blue":   rOff = 0;   gOff = 0;   bOff = 255;
+                case "Yellow": rOff = 255; gOff = 255; bOff = 0;
+                case "Orange":        rOff = 255; gOff = 128; bOff = 0;
+                case "Lime":          rOff = 128; gOff = 255; bOff = 0;
+                case "Purple":        rOff = 128; gOff = 0;   bOff = 255;
+                case "Cyan":          rOff = 0;   gOff = 255; bOff = 255;
+                case "Magenta":       rOff = 255; gOff = 0;   bOff = 255;
+                case "Sky":           rOff = 128; gOff = 200; bOff = 255;
+                case "Brown":         rOff = 150; gOff = 75;  bOff = 0;
+                case "Gray":          rOff = 128; gOff = 128; bOff = 128;
+                case "Navy":          rOff = 0;   gOff = 0;   bOff = 128;
+                case "Olive":         rOff = 128; gOff = 128; bOff = 0;
+                case "Gold":          rOff = 255; gOff = 215; bOff = 0;
+                case "Salmon":        rOff = 250; gOff = 128; bOff = 114;
+                case "Turquoise":     rOff = 64;  gOff = 224; bOff = 208;
+                case "Maroon":        rOff = 128; gOff = 0;   bOff = 0;
+                case "Mint":          rOff = 170; gOff = 255; bOff = 195;
+                case "Lavender":      rOff = 230; gOff = 230; bOff = 250;
+                case "Wine":          rOff = 145; gOff = 0;   bOff = 70;
+                case "Cream":         rOff = 255; gOff = 253; bOff = 208;
+                case "Choco":         rOff = 123; gOff = 63;  bOff = 0;
+                case "NeonPink":      rOff = 255; gOff = 20;  bOff = 147;
+                case "NeonGreen":     rOff = 0;   gOff = 255; bOff = 115;
+                case "NeonBlue":      rOff = 0;   gOff = 115; bOff = 255;
+                case "Ruby":          rOff = 224; gOff = 17;  bOff = 95;
+                case "Jade":          rOff = 0;   gOff = 168; bOff = 107;
+                case "Amber":         rOff = 255; gOff = 191; bOff = 0;
+                case "Ice":           rOff = 180; gOff = 255; bOff = 255;
+            }
+
+            // ===== DURATION =====
+            var durationSteps = data.value.duration;
+            if (durationSteps == null) durationSteps = 0;
+
+            // Cancelar tweens anteriores del personaje
+            FlxTween.cancelTweensOf(character.colorTransform);
+
+            FlxTween.tween(character.colorTransform, {redMultiplier: rMul, greenMultiplier: gMul, blueMultiplier: bMul, redOffset: rOff, greenOffset: gOff, blueOffset: bOff}, durationSteps, {ease: FlxEase.linear});
+        }
+    }
+
+    // ========================= SCHEMA =======================
+    public function getEventSchema() {
+        return [
+            {
+                name: "character",
+                title: "Character",
+                defaultValue: "null",
+                type: "enum",
+                keys: [
+                    "Select your Character" => "null",
+                    "Player" => "bf",
+                    "Girlfriend" => "gf",
+                    "Opponent" => "dad"
+                ]
+            },
+            {
+                name: "color",
+                title: "Target Color",
+                defaultValue: "null",
+                type: "enum",
+                keys: [
+
+                    //Seleccionar default
+                    "Selecciona tu color" => "null",
+
+                    // Tus colores especiales
+                    "PinkCustom"   => "PinkCustom",
+                    "VioletCustom" => "VioletCustom",
+
+                    // Color original
+                    "Original" => "Original",
+
+                    // 36 colors
+                    "Black" => "Black",
+                    "White" => "White",
+                    "Red" => "Red",
+                    "Green" => "Green",
+                    "Blue" => "Blue",
+                    "Yellow" => "Yellow",
+                    "Orange" => "Orange",
+                    "Lime" => "Lime",
+                    "Purple" => "Purple",
+                    "Cyan" => "Cyan",
+                    "Magenta" => "Magenta",
+                    "Sky" => "Sky",
+                    "Brown" => "Brown",
+                    "Gray" => "Gray",
+                    "Navy" => "Navy",
+                    "Olive" => "Olive",
+                    "Gold" => "Gold",
+                    "Salmon" => "Salmon",
+                    "Turquoise" => "Turquoise",
+                    "Maroon" => "Maroon",
+                    "Mint" => "Mint",
+                    "Lavender" => "Lavender",
+                    "Wine" => "Wine",
+                    "Cream" => "Cream",
+                    "Choco" => "Choco",
+                    "NeonPink" => "NeonPink",
+                    "NeonGreen" => "NeonGreen",
+                    "NeonBlue" => "NeonBlue",
+                    "Ruby" => "Ruby",
+                    "Jade" => "Jade",
+                    "Amber" => "Amber",
+                    "Ice" => "Ice"
+                ]
+            },
+            {
+                name: "duration",
+                title: "Duration",
+                defaultValue: 0,
+                type: "float",
+                min: 0,
+                max: 100,
+                step: 0.5,
+                units: "seconds"
+            }
+        ];
+    }
+
+    public function getIconPath() {
+        return "ari-events/ari-color-character";
+    }
+
+    public function getTitle() {
+        return eventName;
+    }
+
+    public function new() {
+        super('ari-events-solid-character');
+    }
+}

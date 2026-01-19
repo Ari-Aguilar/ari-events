@@ -1,0 +1,223 @@
+//Coded by Ari Love - Gamebanana
+import funkin.play.PlayState;
+import funkin.Conductor;
+import funkin.modding.module.Module;
+import flixel.FlxG;
+import flixel.tweens.FlxTween;
+import flixel.tweens.FlxEase;
+import flixel.FlxCamera;
+import funkin.graphics.FunkinSprite;
+import funkin.util.ReflectUtil;
+
+import funkin.play.event.SongEvent;
+import funkin.data.event.SongEventSchema;
+
+import funkin.modding.PolymodErrorHandler;
+
+import funkin.modding.module.ModuleHandler;
+import funkin.modding.module.ScriptedModule;
+import funkin.data.event.SongEventRegistry;
+import funkin.play.event.ScriptedSongEvent;
+
+import funkin.play.stage.StageProp;
+import flixel.util.FlxTimer;
+import flixel.util.FlxColor;
+
+class DarkenStagePropsFixes extends ScriptedModule {
+  var shouldFixDarkenEvent:Bool = true;
+
+  public function new(){
+    super('ari-events-fixes');
+  }
+
+  override function onSongRetry(event):Void {
+    super.onSongRetry(event);
+    resetStageColors();
+  }
+
+  override function onCountdownStart(event):Void {
+    super.onCountdownStart(event);
+    resetStageColors();
+  }
+
+  function resetStageColors():Void {
+    if (PlayState.instance == null || PlayState.instance.currentStage == null) return;
+    
+    for (stageProp in PlayState.instance.currentStage.members) {
+        if (Std.isOfType(stageProp, StageProp)) {
+            if (stageProp.name == "bf" || stageProp.name == "dad" || stageProp.name == "gf"){
+                continue;
+            }
+        }
+        
+        // Cancelar cualquier tween activo en este stageProp
+        FlxTween.cancelTweensOf(stageProp);
+        if (stageProp.colorTransform != null) {
+            FlxTween.cancelTweensOf(stageProp.colorTransform);
+        }
+        
+        // Resetear a color original instantáneamente
+        if (stageProp.colorTransform != null) {
+            stageProp.colorTransform.redMultiplier = 1;
+            stageProp.colorTransform.greenMultiplier = 1;
+            stageProp.colorTransform.blueMultiplier = 1;
+            stageProp.colorTransform.redOffset = 0;
+            stageProp.colorTransform.greenOffset = 0;
+            stageProp.colorTransform.blueOffset = 0;
+        }
+        stageProp.alpha = 1;
+    }
+  }
+}
+
+class DarkenStagePropsEvent extends ScriptedSongEvent {
+  function new() {
+    super("ari-events-color-stage");
+  }
+
+  public var eventName:String = "Ari Events | Color Stage";
+
+  public var DEFAULT_DURATION:Float = 4.0;
+  public var DEFAULT_ALPHA:Float = 1.0;
+  public var colorTween:FlxTween = null;
+
+  override function handleEvent(data):Void {
+    if (PlayState.instance == null || PlayState.instance.currentStage == null) return;
+    if (PlayState.instance.isMinimalMode) return;
+
+    var duration:Float = data.getFloat('duration') != null ? data.getFloat('duration') : DEFAULT_DURATION;
+    var alpha:Float = data.getFloat('alpha') != null ? data.getFloat('alpha') : DEFAULT_ALPHA;
+
+    if (duration < 0) {
+      PolymodErrorHandler.showAlert("Event execution error for " + eventTitle, "Duration cannot be less than 0.");
+      return;
+    }
+
+    var rMul:Float = 0;
+    var gMul:Float = 0;
+    var bMul:Float = 0;
+
+    var rOff:Int = 255;
+    var gOff:Int = 255;
+    var bOff:Int = 255;
+
+    switch (data.value.color) {
+      case "Original":
+          rMul = gMul = bMul = 1;
+          rOff = gOff = bOff = 0;
+      case "Red":
+          rOff = 255; gOff = 0; bOff = 0;
+      case "Blue":
+          rOff = 0; gOff = 0; bOff = 255;
+      case "Green":
+          rOff = 0; gOff = 255; bOff = 0;
+      case "Yellow":
+          rOff = 255; gOff = 255; bOff = 0;
+      case "Orange":
+          rOff = 255; gOff = 128; bOff = 0;
+      case "Purple":
+          rOff = 128; gOff = 0; bOff = 255;
+      case "Pink":
+          rOff = 255; gOff = 192; bOff = 203;
+      case "Cyan":
+          rOff = 0; gOff = 255; bOff = 255;
+      case "Magenta":
+          rOff = 255; gOff = 0; bOff = 255;
+      case "White":
+          rOff = gOff = bOff = 255;
+      case "Black":
+          rOff = gOff = bOff = 0;
+      case "Gray":
+          rOff = 128; gOff = 128; bOff = 128;
+    }
+    
+    trace("Red: " + rOff + ", Green: " + gOff + ", Blue: " + bOff);
+    trace("Alpha: " + alpha);
+    trace("Duration (seconds): " + duration);
+    
+    darkenStageProps(duration, alpha, rMul, gMul, bMul, rOff, gOff, bOff);
+  }
+
+  function darkenStageProps(?dur:Float, ?alpha:Float, ?rMul:Float, ?gMul:Float, ?bMul:Float, ?rOff:Int, ?gOff:Int, ?bOff:Int):Void {
+    cancelColorTween();
+    
+    for (stageProp in PlayState.instance.currentStage.members) {
+      if (Std.isOfType(stageProp, StageProp)) {
+        if (stageProp.name == "bf" || stageProp.name == "dad" || stageProp.name == "gf"){
+          continue;
+        }
+      }
+      
+      // Usar colorTransform igual que en los personajes
+      if (stageProp.colorTransform != null) {
+        FlxTween.tween(stageProp.colorTransform, {
+          redMultiplier: rMul,
+          greenMultiplier: gMul,
+          blueMultiplier: bMul,
+          redOffset: rOff,
+          greenOffset: gOff,
+          blueOffset: bOff
+        }, dur, {ease: FlxEase.linear});
+        
+        FlxTween.tween(stageProp, {alpha: alpha}, dur, {ease: FlxEase.linear});
+      }
+    }
+  }
+  
+  public function cancelColorTween() {
+    if (colorTween != null) colorTween.cancel();
+  }
+
+  public override function getIconPath(){
+    return 'ari-events/ari-color-stage';
+  }
+
+  public override function getTitle() {
+    return eventName;
+  }
+
+  override function getEventSchema() {
+    return [
+      {
+        name: 'duration',
+        title: 'Duration',
+        defaultValue: 4.0,
+        step: 0.5,
+        min: 0,
+        type: "float",
+        units: 'seconds'
+      },
+      {
+        name: 'alpha',
+        title: 'Alpha',
+        defaultValue: 1.0,
+        step: 0.1,
+        min: 0,
+        max: 1,
+        type: "float",
+      },
+      {
+        name: "color",
+        title: "Stage Color",
+        defaultValue: "null",
+        type: "enum",
+        keys: [
+            "Selecciona tu color" => "null",
+            "Original" => "Original",
+            "Red" => "Red",
+            "Blue" => "Blue",
+            "Green" => "Green",
+            "Yellow" => "Yellow",
+            "Orange" => "Orange",
+            "Purple" => "Purple",
+            "Pink" => "Pink",
+            "Cyan" => "Cyan",
+            "Magenta" => "Magenta",
+            "White" => "White",
+            "Black" => "Black",
+            "Gray" => "Gray"
+          ]
+      }
+    ];
+  }
+}

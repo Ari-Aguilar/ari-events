@@ -1,0 +1,21 @@
+{
+  "title": "AriX Events",
+  "description": "A mistake by Ari",
+  "contributors": [
+    {
+      "name": "Ari Love",
+      "role": "Main Leader, Coder."
+    },
+    {
+      "name": "EfnerMC",
+      "role": "Coder"
+    },
+    {
+      "name": "Crystal Studios",
+      "role": "Studio of Ari"
+    }
+  ],
+  "api_version": "0.8.0",
+  "mod_version": "2.1.0",
+  "license": "Apache-2.0"
+}
